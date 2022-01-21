@@ -1,4 +1,5 @@
 # brave-app-reporting
+
 Scripts to help with Brave App reporting
 
 # Running the script
@@ -13,9 +14,9 @@ Scripts to help with Brave App reporting
 
 The PostgreSQL DB connection parameters are required for the application to open a connection to the database. We primarily use the following databases, although you are free to create new ones for development purposes
 
-| Environment | User      | Database Name       |
-| ----------- | --------- | ------------------- |
-| Production  | doadmin   | default             |
+| Environment | User    | Database Name |
+| ----------- | ------- | ------------- |
+| Production  | doadmin | default       |
 
 To access a database shell
 
