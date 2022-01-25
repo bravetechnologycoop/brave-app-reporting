@@ -43,6 +43,7 @@ async function main() {
   console.log('Inserting supporter logs...')
   try {
     const supporterLogRows = await googlesheets.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
+    const queries = []
     for (let i = 0; i < supporterLogRows.length; i += 1) {
       const supportLogRow = supporterLogRows[i]
 
@@ -54,8 +55,8 @@ async function main() {
       supportLogRow[SUPPORTER_ENERGY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_ENERGY_RATING])
       supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP] = googlesheets.formatBoolean(supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP])
 
-      try {
-        await pool.query(
+      queries.push(
+        pool.query(
           `
           INSERT INTO supporterlogs (
             log_timestamp,
@@ -81,19 +82,34 @@ async function main() {
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
           ON CONFLICT (log_timestamp, supporter_email)
-          DO NOTHING
+          DO UPDATE SET
+            supporter_name = EXCLUDED.supporter_name,
+            call_date = EXCLUDED.call_date,
+            call_type = EXCLUDED.call_type,
+            call_duration = EXCLUDED.call_duration,
+            call_challenges = EXCLUDED.call_challenges,
+            call_screenshots = EXCLUDED.call_screenshots,
+            caller_type = EXCLUDED.caller_type,
+            rescue_started = EXCLUDED.rescue_started,
+            rescue_outcome = EXCLUDED.rescue_outcome,
+            caller_used = EXCLUDED.caller_used,
+            caller_administration_route = EXCLUDED.caller_administration_route,
+            caller_location_us = EXCLUDED.caller_location_us,
+            caller_location_ca = EXCLUDED.caller_location_ca,
+            caller_feedback = EXCLUDED.caller_feedback,
+            supporter_emotional_difficulty_rating = EXCLUDED.supporter_emotional_difficulty_rating,
+            supporter_energy_rating = EXCLUDED.supporter_energy_rating,
+            supporter_feedback = EXCLUDED.supporter_feedback,
+            supporter_requests_followup = EXCLUDED.supporter_requests_followup
           `,
           Array.from({ ...supportLogRow, length: 20 }), // Fill in the missing data with undefined
-        )
-      } catch (e) {
-        console.log(
-          `*** ERROR inserting supporter low row ${supportLogRow[LOG_TIMESTAMP]} ${supportLogRow[SUPPORTER_EMAIL]}. This is likely due to unexpected formatting in the Google Sheet. Please go check it out and correct it, if possible.`,
-          e,
-        )
-      }
+        ),
+      )
     }
+
+    await Promise.all(queries)
   } catch (e) {
-    console.log('Error getting the updated call logs from Google Sheets', e)
+    console.log('Error getting the updated call logs from Google Sheets and storing them in the DB', e)
   }
 
   // TODO investigate getting older call logs from the other spreadsheet
@@ -103,24 +119,41 @@ async function main() {
   console.log('Inserting Twilio calls for the last 13 months. This can take 2-5 minutes...')
   try {
     const calls = await twilioClient.calls.list()
-    calls.forEach(async call => {
-      try {
-        await pool.query(
+    const queries = []
+    for (let i = 0; i < calls.length; i += 1) {
+      const call = calls[i]
+      queries.push(
+        pool.query(
           `
-          INSERT INTO calls (sid, start_time, end_time, duration, from_number, to_number, direction, status)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          ON CONFLICT (sid)
-          DO
-            UPDATE SET start_time = EXCLUDED.start_time, end_time = EXCLUDED.end_time, duration = EXCLUDED.duration, from_number = EXCLUDED.from_number, to_number = EXCLUDED.to_number, direction = EXCLUDED.direction, status = EXCLUDED.status;
-          `,
+            INSERT INTO calls (
+              sid,
+              start_time,
+              end_time,
+              duration,
+              from_number,
+              to_number,
+              direction,
+              status
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (sid)
+            DO UPDATE SET 
+              start_time = EXCLUDED.start_time,
+              end_time = EXCLUDED.end_time,
+              duration = EXCLUDED.duration,
+              from_number = EXCLUDED.from_number,
+              to_number = EXCLUDED.to_number,
+              direction = EXCLUDED.direction,
+              status = EXCLUDED.status
+            `,
           [call.sid, call.startTime, call.endTime, call.duration, call.from, call.to, call.direction, call.status],
-        )
-      } catch (e) {
-        console.log('Error inserting Twilio call into the DB', e)
-      }
-    })
+        ),
+      )
+    }
+
+    await Promise.all(queries)
   } catch (e) {
-    console.log('Error getting the Twilio calls', e)
+    console.log('Error getting the Twilio calls and storing them in the DB', e)
   }
 
   // TOOD investigate getting Twilio call logs from > 13 months ago
