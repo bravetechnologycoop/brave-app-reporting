@@ -4,7 +4,7 @@ const pg = require('pg')
 const twilio = require('twilio')
 
 // In-house dependencies
-const googlesheets = require('./googlesheets.js')
+const googlesheets = require('./googlesheets')
 
 async function main() {
   // Setup environment variables
@@ -41,55 +41,59 @@ async function main() {
   const SUPPORTER_REQUESTS_FOLLOWUP = 19
 
   console.log('Inserting supporter logs...')
-  const supporterLogRows = await googlesheets.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
-  for (let i = 0; i < supporterLogRows.length; i += 1) {
-    const supportLogRow = supporterLogRows[i]
+  try {
+    const supporterLogRows = await googlesheets.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
+    for (let i = 0; i < supporterLogRows.length; i += 1) {
+      const supportLogRow = supporterLogRows[i]
 
-    supportLogRow[LOG_TIMESTAMP] = googlesheets.formatDateTime(supportLogRow[LOG_TIMESTAMP])
-    supportLogRow[SUPPORTER_EMAIL] = googlesheets.formatLowercaseString(supportLogRow[SUPPORTER_EMAIL])
-    supportLogRow[CALL_DATE] = googlesheets.formatDate(supportLogRow[CALL_DATE])
-    supportLogRow[RESCUE_STARTED] = googlesheets.formatBoolean(supportLogRow[RESCUE_STARTED])
-    supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING])
-    supportLogRow[SUPPORTER_ENERGY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_ENERGY_RATING])
-    supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP] = googlesheets.formatBoolean(supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP])
+      supportLogRow[LOG_TIMESTAMP] = googlesheets.formatDateTime(supportLogRow[LOG_TIMESTAMP])
+      supportLogRow[SUPPORTER_EMAIL] = googlesheets.formatLowercaseString(supportLogRow[SUPPORTER_EMAIL])
+      supportLogRow[CALL_DATE] = googlesheets.formatDate(supportLogRow[CALL_DATE])
+      supportLogRow[RESCUE_STARTED] = googlesheets.formatBoolean(supportLogRow[RESCUE_STARTED])
+      supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING])
+      supportLogRow[SUPPORTER_ENERGY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_ENERGY_RATING])
+      supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP] = googlesheets.formatBoolean(supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP])
 
-    try {
-      await pool.query(
-        `
-        INSERT INTO supporterlogs (
-          log_timestamp,
-          supporter_email,
-          supporter_name,
-          call_date,
-          call_type,
-          call_duration,
-          call_challenges,
-          call_screenshots,
-          caller_type,
-          rescue_started,
-          rescue_outcome,
-          caller_used,
-          caller_administration_route,
-          caller_location_us,
-          caller_location_ca,
-          caller_feedback,
-          supporter_emotional_difficulty_rating,
-          supporter_energy_rating,
-          supporter_feedback,
-          supporter_requests_followup
+      try {
+        await pool.query(
+          `
+          INSERT INTO supporterlogs (
+            log_timestamp,
+            supporter_email,
+            supporter_name,
+            call_date,
+            call_type,
+            call_duration,
+            call_challenges,
+            call_screenshots,
+            caller_type,
+            rescue_started,
+            rescue_outcome,
+            caller_used,
+            caller_administration_route,
+            caller_location_us,
+            caller_location_ca,
+            caller_feedback,
+            supporter_emotional_difficulty_rating,
+            supporter_energy_rating,
+            supporter_feedback,
+            supporter_requests_followup
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+          ON CONFLICT (log_timestamp, supporter_email)
+          DO NOTHING
+          `,
+          Array.from({ ...supportLogRow, length: 20 }), // Fill in the missing data with undefined
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-        ON CONFLICT (log_timestamp, supporter_email)
-        DO NOTHING
-        `,
-        Array.from({ ...supportLogRow, length: 20 }), // Fill in the missing data with undefined
-      )
-    } catch (e) {
-      console.log(
-        `*** ERROR in row ${supportLogRow[LOG_TIMESTAMP]} ${supportLogRow[SUPPORTER_EMAIL]}. This is likely due to unexpected formatting in the Google Sheet. Please go check it out and correct it, if possible.`,
-        e,
-      )
+      } catch (e) {
+        console.log(
+          `*** ERROR inserting supporter low row ${supportLogRow[LOG_TIMESTAMP]} ${supportLogRow[SUPPORTER_EMAIL]}. This is likely due to unexpected formatting in the Google Sheet. Please go check it out and correct it, if possible.`,
+          e,
+        )
+      }
     }
+  } catch (e) {
+    console.log('Error getting the updated call logs from Google Sheets', e)
   }
 
   // TODO investigate getting older call logs from the other spreadsheet
@@ -97,8 +101,9 @@ async function main() {
   // Get Twilio call logs for the last 13 months
   // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
   console.log('Inserting Twilio calls for the last 13 months. This can take 2-5 minutes...')
-  await Promise.all(
-    twilioClient.calls.each(async call => {
+  try {
+    const calls = await twilioClient.calls.list()
+    calls.forEach(async call => {
       try {
         await pool.query(
           `
@@ -111,10 +116,12 @@ async function main() {
           [call.sid, call.startTime, call.endTime, call.duration, call.from, call.to, call.direction, call.status],
         )
       } catch (e) {
-        console.log(e)
+        console.log('Error inserting Twilio call into the DB', e)
       }
-    }),
-  )
+    })
+  } catch (e) {
+    console.log('Error getting the Twilio calls', e)
+  }
 
   // TOOD investigate getting Twilio call logs from > 13 months ago
   // References:
@@ -122,7 +129,11 @@ async function main() {
   //   https://www.twilio.com/docs/voice/changes-availability-call-and-conference-logs
 
   // Disconnect from destination database
-  await pool.end()
+  try {
+    await pool.end()
+  } catch (e) {
+    console.log('Error closing the DB pool', e)
+  }
 }
 
 main()
