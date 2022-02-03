@@ -13,7 +13,7 @@ BEGIN
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         -- ADD SCRIPT HERE
         CREATE TABLE IF NOT EXISTS supporterlogs (
-            log_timestamp timestamptz,
+            log_timestamp timestamptz PRIMARY KEY,
             supporter_email TEXT,
             supporter_name TEXT,
             call_date DATE,
@@ -34,8 +34,7 @@ BEGIN
             supporter_feedback TEXT,
             supporter_requests_followup BOOLEAN,
             created_at timestamptz NOT NULL DEFAULT now(),
-            updated_at timestamptz NOT NULL DEFAULT now(),
-            PRIMARY KEY(log_timestamp, supporter_email)
+            updated_at timestamptz NOT NULL DEFAULT now()
         );
 
         CREATE OR REPLACE FUNCTION trigger_set_timestamp()
