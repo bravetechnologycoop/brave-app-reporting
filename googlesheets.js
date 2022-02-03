@@ -46,7 +46,7 @@ function formatBoolean(value) {
 }
 
 function formatDate(value) {
-  return value !== undefined ? parse(value, 'M/D/YYYY') : null
+  return value !== undefined && value !== null && value.trim() !== '' ? parse(value, 'M/D/YYYY') : null
 }
 
 function formatDateTime(value) {
