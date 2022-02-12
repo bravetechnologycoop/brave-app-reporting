@@ -5,6 +5,7 @@ const twilio = require('twilio')
 
 // In-house dependencies
 const googlesheets = require('./googlesheets')
+const apple = require('./apple')
 
 async function main() {
   // Setup environment variables
@@ -112,7 +113,42 @@ async function main() {
     console.log('Error getting the updated call logs from Google Sheets and storing them in the DB', e)
   }
 
-  // TODO investigate getting older call logs from the other spreadsheet
+  console.log('\n\n')
+  m
+  // Get Apple Connect first time downloads stats by territory
+  console.log('Inserting Apple first time downloads by territory. This can take 2-5 minutes...')
+  try {
+    const downloads = await apple.getAppleFirstTimeDownloads(process.env.APPLE_APP_ID)
+    const queries = []
+    for (let i = 0; i < downloads.length; i += 1) {
+      const download = downloads[i]
+      if (download.meetsThreshold) {
+        const territory = download.group.title
+        for (let j = 0; j < download.data.length; j += 1) {
+          const downloadDate = download.data[j].date.substring(0, 10)
+          const downloadCount = download.data[j].units
+          queries.push(
+            pool.query(
+              `
+                INSERT INTO appledownloads (territory, download_date, download_count)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (territory, download_date)
+                DO UPDATE SET
+                  download_count = EXCLUDED.download_count
+                `,
+              [territory, downloadDate, downloadCount],
+            ),
+          )
+        }
+      }
+    }
+
+    await Promise.all(queries)
+  } catch (e) {
+    console.log('Error getting the Apple First Time Downloads and storing them in the DB', e)
+  }
+
+  console.log('\n\n')
 
   // Get Twilio call logs for the last 13 months
   // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
@@ -160,6 +196,7 @@ async function main() {
   // References:
   //   https://www.twilio.com/docs/usage/bulkexport
   //   https://www.twilio.com/docs/voice/changes-availability-call-and-conference-logs
+  //   https://www.twilio.com/docs/usage/bulkexport/export-custom-job
 
   // Disconnect from destination database
   try {
