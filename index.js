@@ -4,7 +4,7 @@ const pg = require('pg')
 const twilio = require('twilio')
 
 // In-house dependencies
-const googlesheets = require('./googlesheets')
+const google = require('./google')
 const apple = require('./apple')
 
 async function main() {
@@ -24,8 +24,8 @@ async function main() {
     ssl: true,
   })
 
-  // Connect to Google APIs
-  const oAuth2Client = await googlesheets.authorize(
+  // Connect to Google Sheets APIs (requires user action)
+  const oAuth2Client = await google.authorize(
     process.env.GOOGLE_API_CLIENT_SECRET,
     process.env.GOOGLE_API_CLIENT_ID,
     process.env.GOOGLE_API_REDIRECT_URI,
@@ -40,21 +40,21 @@ async function main() {
   const SUPPORTER_EMOTIONAL_DIFFICULTY_RATING = 16
   const SUPPORTER_ENERGY_RATING = 17
   const SUPPORTER_REQUESTS_FOLLOWUP = 19
-
+  /* eslint-disable-next-line no-console */
   console.log('Inserting supporter logs...')
   try {
-    const supporterLogRows = await googlesheets.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
+    const supporterLogRows = await google.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
     const queries = []
     for (let i = 0; i < supporterLogRows.length; i += 1) {
       const supportLogRow = supporterLogRows[i]
 
-      supportLogRow[LOG_TIMESTAMP] = googlesheets.formatDateTime(supportLogRow[LOG_TIMESTAMP])
-      supportLogRow[SUPPORTER_EMAIL] = googlesheets.formatLowercaseString(supportLogRow[SUPPORTER_EMAIL])
-      supportLogRow[CALL_DATE] = googlesheets.formatDate(supportLogRow[CALL_DATE])
-      supportLogRow[RESCUE_STARTED] = googlesheets.formatBoolean(supportLogRow[RESCUE_STARTED])
-      supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING])
-      supportLogRow[SUPPORTER_ENERGY_RATING] = googlesheets.formatInteger(supportLogRow[SUPPORTER_ENERGY_RATING])
-      supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP] = googlesheets.formatBoolean(supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP])
+      supportLogRow[LOG_TIMESTAMP] = google.formatDateTime(supportLogRow[LOG_TIMESTAMP])
+      supportLogRow[SUPPORTER_EMAIL] = google.formatLowercaseString(supportLogRow[SUPPORTER_EMAIL])
+      supportLogRow[CALL_DATE] = google.formatDate(supportLogRow[CALL_DATE])
+      supportLogRow[RESCUE_STARTED] = google.formatBoolean(supportLogRow[RESCUE_STARTED])
+      supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING] = google.formatInteger(supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING])
+      supportLogRow[SUPPORTER_ENERGY_RATING] = google.formatInteger(supportLogRow[SUPPORTER_ENERGY_RATING])
+      supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP] = google.formatBoolean(supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP])
 
       queries.push(
         pool.query(
@@ -110,12 +110,15 @@ async function main() {
 
     await Promise.all(queries)
   } catch (e) {
-    console.log('Error getting the updated call logs from Google Sheets and storing them in the DB', e)
+    /* eslint-disable-next-line no-console */
+    console.error('Error getting the updated call logs from Google Sheets and storing them in the DB', e)
   }
 
+  /* eslint-disable-next-line no-console */
   console.log('\n\n')
-  m
-  // Get Apple Connect first time downloads stats by territory
+
+  // Get Apple Connect first time downloads stats by territory (requires user action)
+  /* eslint-disable-next-line no-console */
   console.log('Inserting Apple first time downloads by territory. This can take 2-5 minutes...')
   try {
     const downloads = await apple.getAppleFirstTimeDownloads(process.env.APPLE_APP_ID)
@@ -145,13 +148,54 @@ async function main() {
 
     await Promise.all(queries)
   } catch (e) {
-    console.log('Error getting the Apple First Time Downloads and storing them in the DB', e)
+    /* eslint-disable-next-line no-console */
+    console.error('Error getting the Apple First Time Downloads and storing them in the DB', e)
   }
 
+  /* eslint-disable-next-line no-console */
+  console.log('\n\n')
+
+  // Get Google Play Console installation stats by territory
+  // References: https://support.google.com/googleplay/android-developer/answer/6135870?visit_id=637816704425781255-3386620922&p=stats_export&rd=1#export
+  //   https://cloud.google.com/storage/docs/reference/libraries#client-libraries-install-nodejs
+  //   https://github.com/googleapis/nodejs-storage/blob/main/samples/downloadIntoMemory.js
+  /* eslint-disable-next-line no-console */
+  console.log('Inserting Android user downloads by country...')
+  try {
+    const queries = []
+    const androidDownloads = await google.getAndroidDownloads()
+    for (const androidDownload of androidDownloads) {
+      const downloadCount = androidDownload[7]
+      if (downloadCount !== '0') {
+        const territory = androidDownload[2]
+        const downloadDate = androidDownload[0]
+        queries.push(
+          pool.query(
+            `
+              INSERT INTO androiddownloads (territory, download_date, download_count)
+              VALUES ($1, $2, $3)
+              ON CONFLICT (territory, download_date)
+              DO UPDATE SET
+                download_count = EXCLUDED.download_count
+              `,
+            [territory, downloadDate, downloadCount],
+          ),
+        )
+      }
+    }
+
+    await Promise.all(queries)
+  } catch (e) {
+    /* eslint-disable-next-line no-console */
+    console.error('Error getting the Android user downloads and storing them in the DB', e)
+  }
+
+  /* eslint-disable-next-line no-console */
   console.log('\n\n')
 
   // Get Twilio call logs for the last 13 months
   // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
+  /* eslint-disable-next-line no-console */
   console.log('Inserting Twilio calls for the last 13 months. This can take 2-5 minutes...')
   try {
     const calls = await twilioClient.calls.list()
@@ -189,7 +233,8 @@ async function main() {
 
     await Promise.all(queries)
   } catch (e) {
-    console.log('Error getting the Twilio calls and storing them in the DB', e)
+    /* eslint-disable-next-line no-console */
+    console.error('Error getting the Twilio calls and storing them in the DB', e)
   }
 
   // TOOD investigate getting Twilio call logs from > 13 months ago
@@ -202,7 +247,8 @@ async function main() {
   try {
     await pool.end()
   } catch (e) {
-    console.log('Error closing the DB pool', e)
+    /* eslint-disable-next-line no-console */
+    console.error('Error closing the DB pool', e)
   }
 }
 
