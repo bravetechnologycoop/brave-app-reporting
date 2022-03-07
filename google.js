@@ -15,7 +15,7 @@ async function authorize(client_secret, client_id, redirect_uri) {
     access_type: 'offline',
     scope: SCOPES,
   })
-  /* eslint-disable-next-line no-console */
+  // eslint-disable-next-line no-console
   console.log('Authorize this app by visiting this url:', authUrl)
 
   const rl = readline.createInterface({

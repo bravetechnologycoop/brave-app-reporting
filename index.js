@@ -8,11 +8,15 @@ const google = require('./google')
 const apple = require('./apple')
 
 async function main() {
+  const log = ['SUCCESS Started']
+
   // Setup environment variables
   dotenv.config()
+  log.push('SUCCESS Set up environment variables')
 
   // Setup twilio client
   const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN)
+  log.push('SUCCESS Set up Twilio client')
 
   // Connect to destination database
   const pool = new pg.Pool({
@@ -23,16 +27,23 @@ async function main() {
     password: process.env.PG_PASSWORD,
     ssl: true,
   })
+  log.push('SUCCESS Connected to database')
 
   // Connect to Google Sheets APIs (requires user action)
-  const oAuth2Client = await google.authorize(
-    process.env.GOOGLE_API_CLIENT_SECRET,
-    process.env.GOOGLE_API_CLIENT_ID,
-    process.env.GOOGLE_API_REDIRECT_URI,
-  )
+  let oAuth2Client
+  try {
+    oAuth2Client = await google.authorize(process.env.GOOGLE_API_CLIENT_SECRET, process.env.GOOGLE_API_CLIENT_ID, process.env.GOOGLE_API_REDIRECT_URI)
+    log.push('SUCCESS Logged into Google Sheets API')
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Error authenticating with Google Sheets API', e)
+    log.push('FAIL    Did not log into Google Sheets API')
+  }
 
   // Get Supporter Logs from Google Sheets
   // Reference: https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
+  // eslint-disable-next-line no-console
+  console.log('Inserting supporter logs. This takes less than 1 minute...')
   const LOG_TIMESTAMP = 0
   const SUPPORTER_EMAIL = 1
   const CALL_DATE = 3
@@ -40,8 +51,6 @@ async function main() {
   const SUPPORTER_EMOTIONAL_DIFFICULTY_RATING = 16
   const SUPPORTER_ENERGY_RATING = 17
   const SUPPORTER_REQUESTS_FOLLOWUP = 19
-  /* eslint-disable-next-line no-console */
-  console.log('Inserting supporter logs...')
   try {
     const supporterLogRows = await google.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
     const queries = []
@@ -109,17 +118,59 @@ async function main() {
     }
 
     await Promise.all(queries)
+    log.push('SUCCESS Stored supporter call logs from Google Sheets')
   } catch (e) {
-    /* eslint-disable-next-line no-console */
+    // eslint-disable-next-line no-console
     console.error('Error getting the updated call logs from Google Sheets and storing them in the DB', e)
+    log.push('FAIL    Did not store the supporter call logs from Google Sheets')
   }
 
-  /* eslint-disable-next-line no-console */
+  // eslint-disable-next-line no-console
+  console.log('\n\n')
+
+  // Get Google Play Console installation stats by territory
+  // References: https://support.google.com/googleplay/android-developer/answer/6135870?visit_id=637816704425781255-3386620922&p=stats_export&rd=1#export
+  //   https://cloud.google.com/storage/docs/reference/libraries#client-libraries-install-nodejs
+  //   https://github.com/googleapis/nodejs-storage/blob/main/samples/downloadIntoMemory.js
+  // eslint-disable-next-line no-console
+  console.log('Inserting Android user downloads by country. This takes less than 1 minute...')
+  try {
+    const queries = []
+    const androidDownloads = await google.getAndroidDownloads()
+    for (const androidDownload of androidDownloads) {
+      const downloadCount = androidDownload[7]
+      if (downloadCount !== '0') {
+        const territory = androidDownload[2]
+        const downloadDate = androidDownload[0]
+        queries.push(
+          pool.query(
+            `
+              INSERT INTO androiddownloads (territory, download_date, download_count)
+              VALUES ($1, $2, $3)
+              ON CONFLICT (territory, download_date)
+              DO UPDATE SET
+                download_count = EXCLUDED.download_count
+              `,
+            [territory, downloadDate, downloadCount],
+          ),
+        )
+      }
+    }
+
+    await Promise.all(queries)
+    log.push('SUCCESS Stored Android user downloads')
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Error getting the Android user downloads and storing them in the DB', e)
+    log.push('FAIL    Did not store the Android user downloads')
+  }
+
+  // eslint-disable-next-line no-console
   console.log('\n\n')
 
   // Get Apple Connect first time downloads stats by territory (requires user action)
-  /* eslint-disable-next-line no-console */
-  console.log('Inserting Apple first time downloads by territory. This can take 2-5 minutes...')
+  // eslint-disable-next-line no-console
+  console.log('Inserting Apple first time downloads by territory. This can take about 5 minutes...')
   try {
     const downloads = await apple.getAppleFirstTimeDownloads(process.env.APPLE_APP_ID)
     const queries = []
@@ -147,56 +198,20 @@ async function main() {
     }
 
     await Promise.all(queries)
+    log.push('SUCCESS Stored Apple Fist Time Downloads')
   } catch (e) {
-    /* eslint-disable-next-line no-console */
+    // eslint-disable-next-line no-console
     console.error('Error getting the Apple First Time Downloads and storing them in the DB', e)
+    log.push('FAIL    Did not store the Apple First Time Downloads')
   }
 
-  /* eslint-disable-next-line no-console */
-  console.log('\n\n')
-
-  // Get Google Play Console installation stats by territory
-  // References: https://support.google.com/googleplay/android-developer/answer/6135870?visit_id=637816704425781255-3386620922&p=stats_export&rd=1#export
-  //   https://cloud.google.com/storage/docs/reference/libraries#client-libraries-install-nodejs
-  //   https://github.com/googleapis/nodejs-storage/blob/main/samples/downloadIntoMemory.js
-  /* eslint-disable-next-line no-console */
-  console.log('Inserting Android user downloads by country...')
-  try {
-    const queries = []
-    const androidDownloads = await google.getAndroidDownloads()
-    for (const androidDownload of androidDownloads) {
-      const downloadCount = androidDownload[7]
-      if (downloadCount !== '0') {
-        const territory = androidDownload[2]
-        const downloadDate = androidDownload[0]
-        queries.push(
-          pool.query(
-            `
-              INSERT INTO androiddownloads (territory, download_date, download_count)
-              VALUES ($1, $2, $3)
-              ON CONFLICT (territory, download_date)
-              DO UPDATE SET
-                download_count = EXCLUDED.download_count
-              `,
-            [territory, downloadDate, downloadCount],
-          ),
-        )
-      }
-    }
-
-    await Promise.all(queries)
-  } catch (e) {
-    /* eslint-disable-next-line no-console */
-    console.error('Error getting the Android user downloads and storing them in the DB', e)
-  }
-
-  /* eslint-disable-next-line no-console */
+  // eslint-disable-next-line no-console
   console.log('\n\n')
 
   // Get Twilio call logs for the last 13 months
   // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
-  /* eslint-disable-next-line no-console */
-  console.log('Inserting Twilio calls for the last 13 months. This can take 2-5 minutes...')
+  // eslint-disable-next-line no-console
+  console.log('Inserting Twilio calls for the last 13 months. This can take about 10 minutes...')
   try {
     const calls = await twilioClient.calls.list()
     const queries = []
@@ -232,9 +247,11 @@ async function main() {
     }
 
     await Promise.all(queries)
+    log.push('SUCCESS Stored Twilio call logs')
   } catch (e) {
-    /* eslint-disable-next-line no-console */
+    // eslint-disable-next-line no-console
     console.error('Error getting the Twilio calls and storing them in the DB', e)
+    log.push('FAIL    Did not store the Twilio call logs')
   }
 
   // TOOD investigate getting Twilio call logs from > 13 months ago
@@ -247,9 +264,12 @@ async function main() {
   try {
     await pool.end()
   } catch (e) {
-    /* eslint-disable-next-line no-console */
+    // eslint-disable-next-line no-console
     console.error('Error closing the DB pool', e)
   }
+
+  // eslint-disable-next-line no-console
+  console.log(`\n\nSummary:\n  ${log.join('\n  ')}`)
 }
 
 main()
