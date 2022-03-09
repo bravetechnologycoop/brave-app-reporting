@@ -2,11 +2,28 @@
 
 Scripts to help with Brave App reporting
 
-# Running the script
+# Running the main script
 
 1. Run `npm ci`
 
 2. Run `npm start`
+
+# Run the script to import Twilio calls from their bulk exported
+
+1. Run the Twilio Bulk Export process for calls for the dates that you need (reference: https://www.twilio.com/docs/usage/bulkexport/export-custom-job)
+
+   ```
+   curl -X POST https://bulkexports.twilio.com/v1/Exports/Calls/Jobs \
+   --data-urlencode "Email=theresa@brave.coop" \
+   --data-urlencode "StartDay=2020-12-01" \
+   --data-urlencode "EndDay=2020-12-31" \
+   --data-urlencode "FriendlyName=Dec2020" \
+   -u $TWILIO_ACCOUNT_SID:$TWILIO_AUTH_TOKEN
+   ```
+
+1. Wait until you receive an email saying that a particular day is finished exporting
+
+1. Within 7 days of the completed export, run `sudo ./process_twilio_bulk_export.sh ./.env YYYY-MM-DD` where `YYYY-MM-DD` are is the date that you want to import
 
 # Interacting with the Managed Database
 

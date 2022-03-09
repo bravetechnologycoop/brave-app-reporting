@@ -254,12 +254,6 @@ async function main() {
     log.push('FAIL    Did not store the Twilio call logs')
   }
 
-  // TOOD investigate getting Twilio call logs from > 13 months ago
-  // References:
-  //   https://www.twilio.com/docs/usage/bulkexport
-  //   https://www.twilio.com/docs/voice/changes-availability-call-and-conference-logs
-  //   https://www.twilio.com/docs/usage/bulkexport/export-custom-job
-
   // Disconnect from destination database
   try {
     await pool.end()
