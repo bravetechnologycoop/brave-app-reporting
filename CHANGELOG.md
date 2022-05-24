@@ -11,11 +11,15 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [1.0.0] - 2022-05-24
+
+- First fully-working version.
+
 ## [0.1.0] - 2022-01-21
 
 ### Added
 
 - Initial commit
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveButtons/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/bravetechnologycoop/BraveButtons/releases/tag/v0.1.0
+[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/releases/tag/v0.1.0
