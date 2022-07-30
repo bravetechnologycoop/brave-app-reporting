@@ -8,6 +8,9 @@ const google = require('./google')
 const apple = require('./apple')
 
 async function main() {
+  // Avoid self-signed certificate error (https://stackoverflow.com/questions/12180552/openssl-error-self-signed-certificate-in-certificate-chain#answer-55220462)
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
   const log = ['SUCCESS Started']
 
   // Setup environment variables
