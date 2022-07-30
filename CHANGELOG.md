@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [1.1.0] - 2022-07-29
+
+### Changed
+
+- Upgraded NodeJS.
+
 ## [1.0.0] - 2022-05-24
 
 - First fully-working version.
@@ -21,5 +27,7 @@ the code was deployed.
 
 - Initial commit
 
-[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.0.0...1.1.0
+[1.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v0.1.0...1.0.0
 [0.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/releases/tag/v0.1.0
