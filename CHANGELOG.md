@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Security
+
+- Updated Google Sheets OAuth2 process.
+
 ## [1.1.0] - 2022-07-29
 
 ### Changed

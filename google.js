@@ -8,8 +8,8 @@ const { Storage } = require('@google-cloud/storage')
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
-async function authorize(client_secret, client_id, redirect_uri) {
-  const oAuth2Client = new googleapis.auth.OAuth2(client_id, client_secret, redirect_uri)
+async function authorize(client_secret, client_id) {
+  const oAuth2Client = new googleapis.auth.OAuth2(client_id, client_secret, 'https://localhost')
 
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -23,7 +23,7 @@ async function authorize(client_secret, client_id, redirect_uri) {
     output: process.stdout,
   })
   const code = await new Promise(resolve => {
-    rl.question('Enter the code from that page here: ', resolve)
+    rl.question('Enter the value of "code" from the query string here: ', resolve)
   })
   rl.close()
 

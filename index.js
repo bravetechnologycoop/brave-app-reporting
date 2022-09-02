@@ -28,14 +28,14 @@ async function main() {
     user: process.env.PG_USER,
     database: process.env.PG_DATABASE,
     password: process.env.PG_PASSWORD,
-    ssl: true,
+    ssl: false, // true is better, but doesn't work on the Mac Mini
   })
   log.push('SUCCESS Connected to database')
 
   // Connect to Google Sheets APIs (requires user action)
   let oAuth2Client
   try {
-    oAuth2Client = await google.authorize(process.env.GOOGLE_API_CLIENT_SECRET, process.env.GOOGLE_API_CLIENT_ID, process.env.GOOGLE_API_REDIRECT_URI)
+    oAuth2Client = await google.authorize(process.env.GOOGLE_API_CLIENT_SECRET, process.env.GOOGLE_API_CLIENT_ID)
     log.push('SUCCESS Logged into Google Sheets API')
   } catch (e) {
     // eslint-disable-next-line no-console
