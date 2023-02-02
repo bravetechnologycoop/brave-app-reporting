@@ -21,7 +21,7 @@
     "dotenv": "^14.2.0",
     "googleapis": "^95.0.0",
     "pg": "^8.2.0",
-    "twilio": "^3.73.0"
+    "twilio": "^4.7.0"
   },
   "devDependencies": {
     "chai": "^4.3.3",
