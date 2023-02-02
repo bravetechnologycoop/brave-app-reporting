@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Security
+
+- Upgraded dependencies (CU-860phzbq5).
+
 ## [2.0.0] - 2022-09-06
 
 ### Security
