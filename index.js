@@ -2,6 +2,7 @@
 const dotenv = require('dotenv')
 const pg = require('pg')
 const twilio = require('twilio')
+const fs = require('fs').promises
 
 // In-house dependencies
 const google = require('./google')
@@ -17,9 +18,10 @@ async function main() {
   dotenv.config()
   log.push('SUCCESS Set up environment variables')
 
-  // Setup twilio client
-  const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN)
-  log.push('SUCCESS Set up Twilio client')
+  // Setup clients
+  const clientsRaw = await fs.readFile('clients.json', 'ascii')
+  const clients = JSON.parse(clientsRaw)
+  log.push('SUCCESS imported clients.json')
 
   // Connect to destination database
   const pool = new pg.Pool({
@@ -28,7 +30,7 @@ async function main() {
     user: process.env.PG_USER,
     database: process.env.PG_DATABASE,
     password: process.env.PG_PASSWORD,
-    ssl: false, // true is better, but doesn't work on the Mac Mini
+    ssl: { rejectUnauthorized: false }, // Note, to make this work on a Mac, this needs to change to false
   })
   log.push('SUCCESS Connected to database')
 
@@ -91,10 +93,11 @@ async function main() {
             supporter_emotional_difficulty_rating,
             supporter_energy_rating,
             supporter_feedback,
-            supporter_requests_followup
+            supporter_requests_followup,
+            client
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-          ON CONFLICT (log_timestamp)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'Brave')
+          ON CONFLICT (client, log_timestamp)
           DO UPDATE SET
             supporter_name = EXCLUDED.supporter_name,
             call_date = EXCLUDED.call_date,
@@ -148,9 +151,9 @@ async function main() {
         queries.push(
           pool.query(
             `
-              INSERT INTO androiddownloads (territory, download_date, download_count)
-              VALUES ($1, $2, $3)
-              ON CONFLICT (territory, download_date)
+              INSERT INTO androiddownloads (territory, download_date, download_count, client)
+              VALUES ($1, $2, $3, 'Brave')
+              ON CONFLICT (client, territory, download_date)
               DO UPDATE SET
                 download_count = EXCLUDED.download_count
               `,
@@ -187,9 +190,9 @@ async function main() {
           queries.push(
             pool.query(
               `
-                INSERT INTO appledownloads (territory, download_date, download_count)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (territory, download_date)
+                INSERT INTO appledownloads (territory, download_date, download_count, client)
+                VALUES ($1, $2, $3, 'Brave')
+                ON CONFLICT (client, territory, download_date)
                 DO UPDATE SET
                   download_count = EXCLUDED.download_count
                 `,
@@ -211,50 +214,55 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log('\n\n')
 
-  // Get Twilio call logs for the last 13 months
-  // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
-  // eslint-disable-next-line no-console
-  console.log('Inserting Twilio calls for the last 13 months. This can take about 10 minutes...')
-  try {
-    const calls = await twilioClient.calls.list()
-    const queries = []
-    for (let i = 0; i < calls.length; i += 1) {
-      const call = calls[i]
-      queries.push(
-        pool.query(
-          `
-            INSERT INTO calls (
-              sid,
-              start_time,
-              end_time,
-              duration,
-              from_number,
-              to_number,
-              direction,
-              status
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (sid)
-            DO UPDATE SET 
-              start_time = EXCLUDED.start_time,
-              end_time = EXCLUDED.end_time,
-              duration = EXCLUDED.duration,
-              from_number = EXCLUDED.from_number,
-              to_number = EXCLUDED.to_number,
-              direction = EXCLUDED.direction,
-              status = EXCLUDED.status
-            `,
-          [call.sid, call.startTime, call.endTime, call.duration, call.from, call.to, call.direction, call.status],
-        ),
-      )
-    }
-
-    await Promise.all(queries)
-    log.push('SUCCESS Stored Twilio call logs')
-  } catch (e) {
+  for (const client of clients) {
+    // Get Twilio call logs for the last 13 months
+    // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
     // eslint-disable-next-line no-console
-    console.error('Error getting the Twilio calls and storing them in the DB', e)
-    log.push('FAIL    Did not store the Twilio call logs')
+    console.log(`Inserting Twilio calls (${client.name}) for the last 13 months. This can take about 10 minutes...`)
+    try {
+      const twilioClient = twilio(client.twilioSid, client.twilioToken)
+      const calls = await twilioClient.calls.list()
+      const queries = []
+      for (let i = 0; i < calls.length; i += 1) {
+        const call = calls[i]
+        queries.push(
+          pool.query(
+            `
+              INSERT INTO calls (
+                sid,
+                start_time,
+                end_time,
+                duration,
+                from_number,
+                to_number,
+                direction,
+                status,
+                client
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+              ON CONFLICT (sid)
+              DO UPDATE SET
+                start_time = EXCLUDED.start_time,
+                end_time = EXCLUDED.end_time,
+                duration = EXCLUDED.duration,
+                from_number = EXCLUDED.from_number,
+                to_number = EXCLUDED.to_number,
+                direction = EXCLUDED.direction,
+                status = EXCLUDED.status,
+                client = EXCLUDED.client
+              `,
+            [call.sid, call.startTime, call.endTime, call.duration, call.from, call.to, call.direction, call.status, client.name],
+          ),
+        )
+      }
+
+      await Promise.all(queries)
+      log.push(`SUCCESS Stored Twilio call logs (${client.name})`)
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(`Error getting the Twilio calls (${client.name}) and storing them in the DB`, e)
+      log.push(`FAIL    Did not store the Twilio call logs ${client.name}`)
+    }
   }
 
   // Disconnect from destination database

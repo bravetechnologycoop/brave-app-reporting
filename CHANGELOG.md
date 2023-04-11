@@ -11,6 +11,17 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- `client` column to each table to track which whitelabel client the row is for.
+- Download and store the Twilio call data for whitelabel clients.
+
+### Changed
+
+- README instructions.
+- Twilio configuration moved from `.env` to new `clients.json`.
+- DB migration process.
+
 ### Security
 
 - Upgraded dependencies (CU-860phzbq5).

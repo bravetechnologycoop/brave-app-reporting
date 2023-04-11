@@ -13,11 +13,11 @@ if [[ $EUID > 0 ]]; then
     echo "This script needs sudo privileges to run correctly."
     cd $original_dir
     exit 1
-elif [[ ! -n "$2" ]]; then
+elif [[ ! -n "$5" ]]; then
     echo ""
-    echo "Usage: $0 path_to_.env_file date-in-yyyy-MM-dd-format"
+    echo "Usage: $0 path_to_.env_file date-in-yyyy-MM-dd-format client_name twilio_sid twilio_token"
     echo "" 
-    echo "Example: $0 ./../.env 2022-01-31"
+    echo "Example: $0 ./../.env 2022-01-31 Brave abc123 xyz789"
     echo ""
     cd $original_dir
     exit 1
@@ -33,15 +33,11 @@ else
             PG_HOST="$value"
         elif [[ "$name" == "PG_PORT" ]]; then
             PG_PORT="$value"
-        elif [[ "$name" == "TWILIO_SID" ]]; then
-            TWILIO_SID="$value"
-        elif [[ "$name" == "TWILIO_TOKEN" ]]; then
-            TWILIO_TOKEN="$value"
         fi
     done < $1
 
     # Get the one-time use URL from Twilio for the day's calls
-    redirectToWithQuotes=$(curl -X GET "https://bulkexports.twilio.com/v1/Exports/Calls/Days/$2" -u $TWILIO_SID:$TWILIO_TOKEN | jq '.redirect_to')
+    redirectToWithQuotes=$(curl -X GET "https://bulkexports.twilio.com/v1/Exports/Calls/Days/$2" -u $4:$5 | jq '.redirect_to')
 
     # Strip leading and trailing quotes
     redirectTo=${redirectToWithQuotes:1:-1}
@@ -64,7 +60,7 @@ else
         direction=$(jq -r '.direction' <<< "$line")
         status=$(jq -r '.status' <<< "$line")
 
-        sql="INSERT INTO calls (sid, start_time, end_time, duration, from_number, to_number, direction, status) VALUES ('$sid', '$start_time', '$end_time', $duration, '$from_number', '$to_number', '$direction', '$status') ON CONFLICT (sid) DO UPDATE SET start_time = EXCLUDED.start_time, end_time = EXCLUDED.end_time, duration = EXCLUDED.duration, from_number = EXCLUDED.from_number, to_number = EXCLUDED.to_number, direction = EXCLUDED.direction, status = EXCLUDED.status;"
+        sql="INSERT INTO calls (sid, start_time, end_time, duration, from_number, to_number, direction, status, client) VALUES ('$sid', '$start_time', '$end_time', $duration, '$from_number', '$to_number', '$direction', '$status', '$3') ON CONFLICT (sid) DO UPDATE SET start_time = EXCLUDED.start_time, end_time = EXCLUDED.end_time, duration = EXCLUDED.duration, from_number = EXCLUDED.from_number, to_number = EXCLUDED.to_number, direction = EXCLUDED.direction, status = EXCLUDED.status, client = EXCLUDED.client;"
 
         sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -c "$sql"
         ((count=count+1))

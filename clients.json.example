@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Brave",
+    "twilioSid": "abc123",
+    "twilioToken": "xyz987"
+  },
+  {
+    "name": "Client2",
+    "twilioSid": "abc123Client2",
+    "twilioToken": "xyz987Client2"
+  }
+]
