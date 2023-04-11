@@ -1,6 +1,12 @@
-sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -c 'CREATE EXTENSION IF NOT EXISTS "pgcrypto"'
-sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -f ./db/001-setup.sql
-sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -f ./db/002-create-calls-table.sql
-sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -f ./db/003-create-supportlogs-table.sql
-sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -f ./db/004-create-appledownloads-table.sql
-sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE --set=sslmode=require -f ./db/005-create-androiddownloads-table.sql
+#!/bin/bash
+
+pg_password=$1
+pg_user=$2
+pg_host=$3
+pg_dbname=$4
+pg_port=$5
+
+for file in $(ls -v db/*.sql); do
+  echo "Running script $file"
+  PGPASSWORD=$pg_password psql -U $pg_user -h $pg_host -d $pg_dbname -p $pg_port -v "ON_ERROR_STOP=1" --set=sslmode=require -f ./$file
+done
