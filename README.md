@@ -4,11 +4,15 @@ Scripts to help with Brave App reporting
 
 # Running the main script
 
+1. Copy the `.env.example` file, rename the copy to `.env`, and update it to have the values you need
+
+1. Copy the `clients.json.example` file, rename the copy to `clients.json`, and update it to have the values you need
+
 1. Run `npm ci`
 
-2. Run `npm start`
+1. Run `npm start`
 
-# Run the script to import Twilio calls from their bulk exported
+# Running the script to import Twilio calls from their bulk export
 
 1. Run the Twilio Bulk Export process for calls for the dates that you need (reference: https://www.twilio.com/docs/usage/bulkexport/export-custom-job)
 
@@ -23,7 +27,11 @@ Scripts to help with Brave App reporting
 
 1. Wait until you receive an email saying that a particular day is finished exporting
 
-1. Within 7 days of the completed export, run `sudo ./process_twilio_bulk_export.sh ./.env YYYY-MM-DD` where `YYYY-MM-DD` are is the date that you want to import
+1. Within 7 days of the completed export, run `sudo ./process_twilio_bulk_export.sh ./.env YYYY-MM-DD clientName twilioSid twilioToken` where
+   - `YYYY-MM-DD` are is the date that you want to import
+   - `clientName` is one of the valid whitelabel client names (e.g. `Brave`)
+   - `twilioSid` is the SID of the Twilio SubAccount used by the whitelabel client
+   - `twilioToken` is the Token of the Twilio SubAcccount used by the whitelabel client
 
 # Interacting with the Managed Database
 
