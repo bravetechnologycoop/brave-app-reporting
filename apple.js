@@ -14,7 +14,7 @@ async function getAppleFirstTimeDownloads(appId) {
   // eslint-disable-next-line no-console
   console.log('Authorize this app by visiting this url and logging in using your Apple ID: https://appstoreconnect.apple.com/login')
   const cookies = await new Promise(resolve => {
-    rl.question('Copy all the cookies sent to "/providerNews" from the Developer Console Network tab and enter them here : ', resolve)
+    rl.question('Copy all the cookies sent to "/providerNews" in Headers --> Request Headers --> Cookie from the Developer Console Network tab and enter them here : ', resolve)
   })
   rl.close()
 

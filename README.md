@@ -4,7 +4,7 @@ Scripts to help with Brave App reporting
 
 # Running the main script
 
-1. Copy the `.env.example` file, rename the copy to `.env`, and update it to have the values you need
+1. Copy the `.env.example` file, rename the copy to `.env`, and update it to have the values you need, including downloading the `credentials.json` file and updating the value of `GOOGLE_APPLICATION_CREDENTIALS`
 
 1. Copy the `clients.json.example` file, rename the copy to `clients.json`, and update it to have the values you need
 
