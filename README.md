@@ -13,6 +13,7 @@ Scripts to help with Brave App reporting
    - `twilioToken` - Get from Twilio --> Accounts --> Brave App - Production --> View Subaccounts --> [Name of the subaccount for the whitelabel client] --> Account Info --> Auth Token (example: `c8f0a844ca87d7c436e76dfcc53cd62e`)
    - `googleCloudStorageBucket` - Get from Google Play Console --> Download reports --> Statistics --> choose the whitelabel client's app --> Installs --> Copy Cloud Storage URI and take just the bucket part of it (example: `pubsite_prod_rev_12345678901234567890`)
    - `googleCloudStorageFilePrefix` - Get from Google Play Console --> Download reports --> Statistics --> choose the whitelabel client's app --> Installs --> Inspect one of the download links to get the path and name of the CSV file. Start with the word after the bucket name (no forward slash) and end just before the date (example: `stats/installs/installs_com.package.name_`)
+   - `appleAppId` - Get from Apple App ID from App Store Connect --> My Apps --> [Name of the whitelabel client's app] --> General --> App Inforomation --> Apple ID (example: `1234567890`)
 
 1. Run `npm ci`
 

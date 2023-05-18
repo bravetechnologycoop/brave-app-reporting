@@ -14,6 +14,7 @@ the code was deployed.
 ## Added
 
 - Download and store the Android download data for whitelabel clients.
+- Download and store the Apple download data for whitelabel clients.
 
 ## [2.1.0] - 2023-04-24
 
