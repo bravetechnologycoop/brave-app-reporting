@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+## Added
+
+- Download and store the Android download data for whitelabel clients.
+
 ## [2.1.0] - 2023-04-24
 
 ### Added
