@@ -63,18 +63,18 @@ function formatLowercaseString(value) {
   return value.trim().toLowerCase()
 }
 
-async function getAndroidDownloads() {
+async function getAndroidDownloads(googleCloudStorageBucket, googleCloudStoragePrefix) {
   // Get the names of all the download statistics reports for the Brave App
   const storage = new Storage()
-  const [files] = await storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET).getFiles({
-    prefix: process.env.GOOGLE_CLOUD_STORAGE_FILE_PREFIX,
+  const [files] = await storage.bucket(googleCloudStorageBucket).getFiles({
+    prefix: googleCloudStoragePrefix,
   })
 
   // Read all the downloads-by-country files, split the results into rows, and add to the results array
   const results = []
   const countryFileNames = files.filter(f => f.name.indexOf('_country.csv') > 0).map(f => f.name)
   for (const countryFileName of countryFileNames) {
-    const [contents] = await storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET).file(countryFileName).download()
+    const [contents] = await storage.bucket(googleCloudStorageBucket).file(countryFileName).download()
     contents
       .toString('utf16le') // decode Buffer
       .split('\n') // split into rows

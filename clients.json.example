@@ -3,10 +3,14 @@
     "name": "Brave",
     "twilioSid": "abc123",
     "twilioToken": "xyz987"
+    "googleCloudStorageBucket": "pubsite_prod_rev_01234567890123456789",
+    "googleCloudStorageFilePrefix": "stats/installs/installs_com.package.name_",
   },
   {
     "name": "Client2",
-    "twilioSid": "abc123Client2",
-    "twilioToken": "xyz987Client2"
+    "twilioSid": null,
+    "twilioToken": null,
+    "googleCloudStorageBucket": null,
+    "googleCloudStorageFilePrefix": null,
   }
 ]

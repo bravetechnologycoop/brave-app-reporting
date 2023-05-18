@@ -139,36 +139,43 @@ async function main() {
   //   https://cloud.google.com/storage/docs/reference/libraries#client-libraries-install-nodejs
   //   https://github.com/googleapis/nodejs-storage/blob/main/samples/downloadIntoMemory.js
   // eslint-disable-next-line no-console
-  console.log('Inserting Android user downloads by country. This takes less than 1 minute...')
-  try {
-    const queries = []
-    const androidDownloads = await google.getAndroidDownloads()
-    for (const androidDownload of androidDownloads) {
-      const downloadCount = androidDownload[7]
-      if (downloadCount !== '0') {
-        const territory = androidDownload[2]
-        const downloadDate = androidDownload[0]
-        queries.push(
-          pool.query(
-            `
-              INSERT INTO androiddownloads (territory, download_date, download_count, client)
-              VALUES ($1, $2, $3, 'Brave')
-              ON CONFLICT (client, territory, download_date)
-              DO UPDATE SET
-                download_count = EXCLUDED.download_count
-              `,
-            [territory, downloadDate, downloadCount],
-          ),
-        )
-      }
+  for (const client of clients) {
+    if (client.googleCloudStorageBucket === null || client.googleCloudStorageFilePrefix === null) {
+      log.push(`skipped Did not store the Android user downloads (${client.name})`)
+      continue
     }
 
-    await Promise.all(queries)
-    log.push('SUCCESS Stored Android user downloads')
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Error getting the Android user downloads and storing them in the DB', e)
-    log.push('FAIL    Did not store the Android user downloads')
+    console.log(`Inserting Android user downloads by country (${client.name}). This takes less than 1 minute...`)
+    try {
+      const queries = []
+      const androidDownloads = await google.getAndroidDownloads(client.googleCloudStorageBucket, client.googleCloudStorageFilePrefix)
+      for (const androidDownload of androidDownloads) {
+        const downloadCount = androidDownload[7]
+        if (downloadCount !== '0') {
+          const territory = androidDownload[2]
+          const downloadDate = androidDownload[0]
+          queries.push(
+            pool.query(
+              `
+                INSERT INTO androiddownloads (territory, download_date, download_count, client)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (client, territory, download_date)
+                DO UPDATE SET
+                  download_count = EXCLUDED.download_count
+                `,
+              [territory, downloadDate, downloadCount, client.name],
+            ),
+          )
+        }
+      }
+
+      await Promise.all(queries)
+      log.push(`SUCCESS Stored Android user downloads (${client.name})`)
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(`Error getting the Android user downloads and storing them in the DB (${client.name})`, e)
+      log.push(`FAIL    Did not store the Android user downloads (${client.name})`)
+    }
   }
 
   // eslint-disable-next-line no-console
