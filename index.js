@@ -183,39 +183,46 @@ async function main() {
 
   // Get Apple Connect first time downloads stats by territory (requires user action)
   // eslint-disable-next-line no-console
-  console.log('Inserting Apple first time downloads by territory. This can take about 5 minutes...')
-  try {
-    const downloads = await apple.getAppleFirstTimeDownloads(process.env.APPLE_APP_ID)
-    const queries = []
-    for (let i = 0; i < downloads.length; i += 1) {
-      const download = downloads[i]
-      if (download.meetsThreshold) {
-        const territory = download.group.title
-        for (let j = 0; j < download.data.length; j += 1) {
-          const downloadDate = download.data[j].date.substring(0, 10)
-          const downloadCount = download.data[j].units
-          queries.push(
-            pool.query(
-              `
-                INSERT INTO appledownloads (territory, download_date, download_count, client)
-                VALUES ($1, $2, $3, 'Brave')
-                ON CONFLICT (client, territory, download_date)
-                DO UPDATE SET
-                  download_count = EXCLUDED.download_count
-                `,
-              [territory, downloadDate, downloadCount],
-            ),
-          )
-        }
-      }
+  for (const client of clients) {
+    if (client.appleAppId === null) {
+      log.push(`skipped Did not store the Apple First Time Downloads (${client.name})`)
+      continue
     }
 
-    await Promise.all(queries)
-    log.push('SUCCESS Stored Apple Fist Time Downloads')
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Error getting the Apple First Time Downloads and storing them in the DB', e)
-    log.push('FAIL    Did not store the Apple First Time Downloads')
+    console.log(`Inserting Apple first time downloads by territory (${client.name}). This can take about 5 minutes...`)
+    try {
+      const downloads = await apple.getAppleFirstTimeDownloads(client.appleAppId)
+      const queries = []
+      for (let i = 0; i < downloads.length; i += 1) {
+        const download = downloads[i]
+        if (download.meetsThreshold) {
+          const territory = download.group.title
+          for (let j = 0; j < download.data.length; j += 1) {
+            const downloadDate = download.data[j].date.substring(0, 10)
+            const downloadCount = download.data[j].units
+            queries.push(
+              pool.query(
+                `
+                  INSERT INTO appledownloads (territory, download_date, download_count, client)
+                  VALUES ($1, $2, $3, $4)
+                  ON CONFLICT (client, territory, download_date)
+                  DO UPDATE SET
+                    download_count = EXCLUDED.download_count
+                  `,
+                [territory, downloadDate, downloadCount, client.name],
+              ),
+            )
+          }
+        }
+      }
+
+      await Promise.all(queries)
+      log.push(`SUCCESS Stored Apple Fist Time Downloads (${client.name})`)
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(`Error getting the Apple First Time Downloads and storing them in the DB (${client.name})`, e)
+      log.push(`FAIL    Did not store the Apple First Time Downloads (${client.name})`)
+    }
   }
 
   // eslint-disable-next-line no-console

@@ -5,6 +5,7 @@
     "twilioToken": "xyz987"
     "googleCloudStorageBucket": "pubsite_prod_rev_01234567890123456789",
     "googleCloudStorageFilePrefix": "stats/installs/installs_com.package.name_",
+    "appleAppId": "1234567890"
   },
   {
     "name": "Client2",
@@ -12,5 +13,6 @@
     "twilioToken": null,
     "googleCloudStorageBucket": null,
     "googleCloudStorageFilePrefix": null,
+    "appleAppId": null
   }
 ]
