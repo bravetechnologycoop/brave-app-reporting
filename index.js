@@ -221,10 +221,15 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log('\n\n')
 
+  // Get Twilio call logs for the last 13 months
+  // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
+  // eslint-disable-next-line no-console
   for (const client of clients) {
-    // Get Twilio call logs for the last 13 months
-    // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
-    // eslint-disable-next-line no-console
+    if (client.twilioSid === null || client.twilioToken === null) {
+      log.push(`skipped Did not store the Twilio call logs (${client.name})`)
+      continue
+    }
+
     console.log(`Inserting Twilio calls (${client.name}) for the last 13 months. This can take about 10 minutes...`)
     try {
       const twilioClient = twilio(client.twilioSid, client.twilioToken)
@@ -268,7 +273,7 @@ async function main() {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(`Error getting the Twilio calls (${client.name}) and storing them in the DB`, e)
-      log.push(`FAIL    Did not store the Twilio call logs ${client.name}`)
+      log.push(`FAIL    Did not store the Twilio call logs (${client.name})`)
     }
   }
 
