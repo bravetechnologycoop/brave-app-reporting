@@ -21,7 +21,7 @@ async function main() {
   // Setup clients
   const clientsRaw = await fs.readFile('clients.json', 'ascii')
   const clients = JSON.parse(clientsRaw)
-  log.push('SUCCESS imported clients.json')
+  log.push('SUCCESS Imported clients.json')
 
   // Connect to destination database
   const pool = new pg.Pool({
@@ -48,7 +48,7 @@ async function main() {
   // Get Supporter Logs from Google Sheets
   // Reference: https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
   // eslint-disable-next-line no-console
-  console.log('Inserting supporter logs. This takes less than 1 minute...')
+  console.log('Inserting supporter logs (Brave). This takes less than 1 minute...')
   const LOG_TIMESTAMP = 0
   const SUPPORTER_EMAIL = 1
   const CALL_DATE = 3
@@ -124,10 +124,10 @@ async function main() {
     }
 
     await Promise.all(queries)
-    log.push('SUCCESS Stored supporter call logs from Google Sheets')
+    log.push('SUCCESS Stored supporter call logs from Google Sheets (Brave)')
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Error getting the updated call logs from Google Sheets and storing them in the DB', e)
+    console.error('Error getting the updated call logs from Google Sheets and storing them in the DB (Brave)', e)
     log.push('FAIL    Did not store the supporter call logs from Google Sheets')
   }
 
@@ -141,7 +141,7 @@ async function main() {
   // eslint-disable-next-line no-console
   for (const client of clients) {
     if (client.googleCloudStorageBucket === null || client.googleCloudStorageFilePrefix === null) {
-      log.push(`skipped Did not store the Android user downloads (${client.name})`)
+      log.push(`skip    Did not store the Android user downloads (${client.name})`)
       continue
     }
 
@@ -176,16 +176,16 @@ async function main() {
       console.error(`Error getting the Android user downloads and storing them in the DB (${client.name})`, e)
       log.push(`FAIL    Did not store the Android user downloads (${client.name})`)
     }
-  }
 
-  // eslint-disable-next-line no-console
-  console.log('\n\n')
+    // eslint-disable-next-line no-console
+    console.log('\n\n')
+  }
 
   // Get Apple Connect first time downloads stats by territory (requires user action)
   // eslint-disable-next-line no-console
   for (const client of clients) {
     if (client.appleAppId === null) {
-      log.push(`skipped Did not store the Apple First Time Downloads (${client.name})`)
+      log.push(`skip    Did not store the Apple First Time Downloads (${client.name})`)
       continue
     }
 
@@ -223,17 +223,17 @@ async function main() {
       console.error(`Error getting the Apple First Time Downloads and storing them in the DB (${client.name})`, e)
       log.push(`FAIL    Did not store the Apple First Time Downloads (${client.name})`)
     }
-  }
 
-  // eslint-disable-next-line no-console
-  console.log('\n\n')
+    // eslint-disable-next-line no-console
+    console.log('\n\n')
+  }
 
   // Get Twilio call logs for the last 13 months
   // Reference: https://www.twilio.com/docs/libraries/node#iterate-through-records
   // eslint-disable-next-line no-console
   for (const client of clients) {
     if (client.twilioSid === null || client.twilioToken === null) {
-      log.push(`skipped Did not store the Twilio call logs (${client.name})`)
+      log.push(`skip    Did not store the Twilio call logs (${client.name})`)
       continue
     }
 
