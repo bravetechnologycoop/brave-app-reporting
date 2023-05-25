@@ -15,6 +15,11 @@ the code was deployed.
 
 - Download and store the Android download data for whitelabel clients.
 - Download and store the Apple download data for whitelabel clients.
+- As much time series data as I could from the Apple App store and stored it in `apple_data` table.
+
+### Changed
+
+- Renamed the `appledownloads` table to `apple_data` and two of its columns (`download_date` is now `data_data` and `download_count` is now `first_time_downloads_count`).
 
 ## [2.1.0] - 2023-04-24
 
