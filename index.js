@@ -185,43 +185,83 @@ async function main() {
   // eslint-disable-next-line no-console
   for (const client of clients) {
     if (client.appleAppId === null) {
-      log.push(`skip    Did not store the Apple First Time Downloads (${client.name})`)
+      log.push(`skip    Did not store the Apple Data (${client.name})`)
       continue
     }
 
-    console.log(`Inserting Apple first time downloads by territory (${client.name}). This can take about 5 minutes...`)
+    console.log(`Inserting Apple data by territory (${client.name}). This can take about 5 minutes...`)
     try {
-      const downloads = await apple.getAppleFirstTimeDownloads(client.appleAppId)
+      const appleData = await apple.getAllAppleData(client.appleAppId)
+
       const queries = []
-      for (let i = 0; i < downloads.length; i += 1) {
-        const download = downloads[i]
-        if (download.meetsThreshold) {
-          const territory = download.group.title
-          for (let j = 0; j < download.data.length; j += 1) {
-            const downloadDate = download.data[j].date.substring(0, 10)
-            const downloadCount = download.data[j].units
-            queries.push(
-              pool.query(
-                `
-                  INSERT INTO appledownloads (territory, download_date, download_count, client)
-                  VALUES ($1, $2, $3, $4)
-                  ON CONFLICT (client, territory, download_date)
-                  DO UPDATE SET
-                    download_count = EXCLUDED.download_count
-                  `,
-                [territory, downloadDate, downloadCount, client.name],
-              ),
-            )
-          }
-        }
+      for (const [k, d] of Object.entries(appleData)) {
+        const territoryName = d.territoryName
+        const date = d.date
+        const firstTimeDownloadsCount = d.units
+        const redownloadsCount = d.redownloads
+        const totalDownloadsCount = d.totalDownloads
+        const totalDeviceImpressionsCount = d.impressionsTotal
+        const uniqueDeviceImpressionsCount = d.impressionsTotalUnique
+        const totalProductPageViewsCount = d.pageViewCount
+        const uniqueProductPageViewsCount = d.pageViewUnique
+        const updatesCount = d.updates
+        const conversionRate = d.conversionRate
+        const installationsCount = d.installs
+        const sessionsCount = d.sessions
+        const totalActiveDevicesCount = d.activeDevices
+        const activeInLast30DaysDevicesCount = d.rollingActiveDevices
+        const deletionsCount = d.uninstalls
+        queries.push(
+          pool.query(
+            `
+                INSERT INTO apple_data (territory, data_date, client, first_time_downloads_count, redownloads_count, total_downloads_count, total_device_impressions_count, unique_device_impressions_count, total_product_page_views_count, unique_product_page_views_count, updates_count, conversion_rate, installations_count, sessions_count, total_active_devices_count, active_in_last_30_days_devices_count, deletions_count)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                ON CONFLICT (client, territory, data_date)
+                DO UPDATE SET
+                  first_time_downloads_count = EXCLUDED.first_time_downloads_count,
+                  redownloads_count = EXCLUDED.redownloads_count,
+                  total_downloads_count = EXCLUDED.total_downloads_count,
+                  total_device_impressions_count = EXCLUDED.total_device_impressions_count,
+                  unique_device_impressions_count = EXCLUDED.unique_device_impressions_count,
+                  total_product_page_views_count = EXCLUDED.total_product_page_views_count,
+                  unique_product_page_views_count = EXCLUDED.unique_product_page_views_count,
+                  updates_count = EXCLUDED.updates_count,
+                  conversion_rate = EXCLUDED.conversion_rate,
+                  installations_count = EXCLUDED.installations_count,
+                  sessions_count = EXCLUDED.sessions_count,
+                  total_active_devices_count = EXCLUDED.total_active_devices_count,
+                  active_in_last_30_days_devices_count = EXCLUDED.active_in_last_30_days_devices_count,
+                  deletions_count = EXCLUDED.deletions_count
+                `,
+            [
+              territoryName,
+              date,
+              client.name,
+              firstTimeDownloadsCount,
+              redownloadsCount,
+              totalDownloadsCount,
+              totalDeviceImpressionsCount,
+              uniqueDeviceImpressionsCount,
+              totalProductPageViewsCount,
+              uniqueProductPageViewsCount,
+              updatesCount,
+              conversionRate,
+              installationsCount,
+              sessionsCount,
+              totalActiveDevicesCount,
+              activeInLast30DaysDevicesCount,
+              deletionsCount,
+            ],
+          ),
+        )
       }
 
       await Promise.all(queries)
-      log.push(`SUCCESS Stored Apple Fist Time Downloads (${client.name})`)
+      log.push(`SUCCESS Stored Apple Data (${client.name})`)
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(`Error getting the Apple First Time Downloads and storing them in the DB (${client.name})`, e)
-      log.push(`FAIL    Did not store the Apple First Time Downloads (${client.name})`)
+      console.error(`Error getting the Apple Data and storing them in the DB (${client.name})`, e)
+      log.push(`FAIL    Did not store the Apple Data (${client.name})`)
     }
 
     // eslint-disable-next-line no-console
