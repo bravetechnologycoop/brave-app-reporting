@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Upgraded NodeJS to 18.16.1 (CU-860pqat6u).
+
 ## [3.0.0] - 2023-06-09
 
 ## Added
@@ -63,9 +67,9 @@ the code was deployed.
 - Initial commit
 
 [unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.0.0...HEAD
-[3.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.1.0...3.0.0
-[2.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.0.0...2.1.0
-[2.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.1.0...2.0.0
-[1.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.0.0...1.1.0
-[1.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v0.1.0...1.0.0
+[3.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.1.0...v3.0.0
+[2.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.1.0...v2.0.0
+[1.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/releases/tag/v0.1.0
