@@ -21,7 +21,7 @@ the code was deployed.
 
 ### Changed
 
-- Renamed the `appledownloads` table to `apple_data` and two of its columns (`download_date` is now `data_data` and `download_count` is now `first_time_downloads_count`).
+- Renamed the `appledownloads` table to `apple_data` and two of its columns (`download_date` is now `data_date` and `download_count` is now `first_time_downloads_count`).
 
 ## [2.1.0] - 2023-04-24
 
