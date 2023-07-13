@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [3.1.0] - 2023-07-13
+
 ### Changed
 
 - Upgraded NodeJS to 18.16.1 (CU-860pqat6u).
@@ -66,7 +68,8 @@ the code was deployed.
 
 - Initial commit
 
-[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v1.1.0...v2.0.0
