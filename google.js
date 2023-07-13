@@ -44,7 +44,7 @@ async function getSheetsValues(spreadsheetId, range, auth) {
 }
 
 function formatBoolean(value) {
-  return value === undefined || value.trim() === '' ? null : value.trim() === 'Yes'
+  return value === undefined || value.trim() === '' ? null : value.trim().indexOf('Yes') >= 0
 }
 
 function formatDate(value) {

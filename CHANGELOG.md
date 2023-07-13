@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- "Caller location outside of Canada and the USA" and "Rescue button used to get caller’s attention" columns in the the `supporterlogs` table.
+
 ## [3.1.0] - 2023-07-13
 
 ### Changed

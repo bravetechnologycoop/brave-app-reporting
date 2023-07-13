@@ -56,8 +56,9 @@ async function main() {
   const SUPPORTER_EMOTIONAL_DIFFICULTY_RATING = 16
   const SUPPORTER_ENERGY_RATING = 17
   const SUPPORTER_REQUESTS_FOLLOWUP = 19
+  const RESCUE_BUTTON_USED_FOR_ATTENTION = 21
   try {
-    const supporterLogRows = await google.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:T', oAuth2Client)
+    const supporterLogRows = await google.getSheetsValues(process.env.SUPPORTER_LOG_GOOGLE_SHEET_ID, 'A2:V', oAuth2Client)
     const queries = []
     for (let i = 0; i < supporterLogRows.length; i += 1) {
       const supportLogRow = supporterLogRows[i]
@@ -69,6 +70,7 @@ async function main() {
       supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING] = google.formatInteger(supportLogRow[SUPPORTER_EMOTIONAL_DIFFICULTY_RATING])
       supportLogRow[SUPPORTER_ENERGY_RATING] = google.formatInteger(supportLogRow[SUPPORTER_ENERGY_RATING])
       supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP] = google.formatBoolean(supportLogRow[SUPPORTER_REQUESTS_FOLLOWUP])
+      supportLogRow[RESCUE_BUTTON_USED_FOR_ATTENTION] = google.formatBoolean(supportLogRow[RESCUE_BUTTON_USED_FOR_ATTENTION])
 
       queries.push(
         pool.query(
@@ -94,9 +96,11 @@ async function main() {
             supporter_energy_rating,
             supporter_feedback,
             supporter_requests_followup,
+            caller_location_other,
+            rescue_button_used_for_attention,
             client
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'Brave')
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, 'Brave')
           ON CONFLICT (client, log_timestamp)
           DO UPDATE SET
             supporter_name = EXCLUDED.supporter_name,
@@ -116,9 +120,11 @@ async function main() {
             supporter_emotional_difficulty_rating = EXCLUDED.supporter_emotional_difficulty_rating,
             supporter_energy_rating = EXCLUDED.supporter_energy_rating,
             supporter_feedback = EXCLUDED.supporter_feedback,
-            supporter_requests_followup = EXCLUDED.supporter_requests_followup
+            supporter_requests_followup = EXCLUDED.supporter_requests_followup,
+            caller_location_other = EXCLUDED.caller_location_other,
+            rescue_button_used_for_attention = EXCLUDED.rescue_button_used_for_attention
           `,
-          Array.from({ ...supportLogRow, length: 20 }), // Fill in the missing data with undefined
+          Array.from({ ...supportLogRow, length: 22 }), // Fill in the missing data with undefined
         ),
       )
     }
