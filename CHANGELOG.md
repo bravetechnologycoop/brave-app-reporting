@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [3.2.0] - 2024-01-24
+
 ### Added
 
 - "Caller location outside of Canada and the USA" and "Rescue button used to get caller’s attention" columns in the the `supporterlogs` table.
@@ -76,7 +78,8 @@ the code was deployed.
 
 - Initial commit
 
-[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/bravetechnologycoop/brave-app-reporting/compare/v2.0.0...v2.1.0
